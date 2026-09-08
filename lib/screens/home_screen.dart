@@ -9,8 +9,14 @@ import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
 import "../widgets/confirm_dialog.dart";
 import "business_settings_screen.dart";
+import "customers_screen.dart";
 import "login_screen.dart";
 import "printer_settings_screen.dart";
+import "products_screen.dart";
+import "reports_screen.dart";
+import "returns_screen.dart";
+import "sale_screen.dart";
+import "sales_list_screen.dart";
 
 const _sampleDashboardJson = {
   "isSample": true,
@@ -166,6 +172,16 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => SaleScreen(api: widget.api)),
+          );
+        },
+        backgroundColor: AuthColors.primary,
+        icon: const Icon(Icons.add_shopping_cart_rounded),
+        label: const Text("New sale"),
+      ),
       drawer: Drawer(
         backgroundColor: AuthColors.frost,
         child: SafeArea(
@@ -229,6 +245,66 @@ class _HomeScreenState extends State<HomeScreen> {
                 leading: const Icon(Icons.dashboard_outlined),
                 title: const Text("Dashboard"),
                 onTap: () => Navigator.pop(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.icecream_outlined),
+                title: const Text("Products"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ProductsScreen(api: widget.api),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.people_outline),
+                title: const Text("Customers"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CustomersScreen(api: widget.api),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.point_of_sale_outlined),
+                title: const Text("Sales"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => SalesListScreen(api: widget.api),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.assignment_return_outlined),
+                title: const Text("Returns"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ReturnsScreen(api: widget.api),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.bar_chart_rounded),
+                title: const Text("Reports"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ReportsScreen(api: widget.api),
+                    ),
+                  );
+                },
               ),
               ListTile(
                 leading: const Icon(Icons.storefront_outlined),
@@ -389,33 +465,65 @@ class _HomeScreenState extends State<HomeScreen> {
                       runSpacing: 10,
                       children: [
                         _QuickChip(
-                          icon: Icons.storefront_outlined,
-                          label: "Settings",
-                          onTap: _openSettings,
-                        ),
-                        _QuickChip(
-                          icon: Icons.print_rounded,
-                          label: "Printer",
+                          icon: Icons.add_shopping_cart_rounded,
+                          label: "New sale",
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => const PrinterSettingsScreen(),
+                                builder: (_) => SaleScreen(api: widget.api),
                               ),
                             );
                           },
                         ),
                         _QuickChip(
-                          icon: Icons.receipt_long_outlined,
-                          label: "Bill preview",
+                          icon: Icons.icecream_outlined,
+                          label: "Products",
                           onTap: () {
-                            if (settings == null) return;
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ProductsScreen(api: widget.api),
+                              ),
+                            );
+                          },
+                        ),
+                        _QuickChip(
+                          icon: Icons.people_outline,
+                          label: "Customers",
+                          onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) =>
-                                    BillPreviewScreen(settings: settings),
+                                    CustomersScreen(api: widget.api),
                               ),
                             );
                           },
+                        ),
+                        _QuickChip(
+                          icon: Icons.assignment_return_outlined,
+                          label: "Returns",
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ReturnsScreen(api: widget.api),
+                              ),
+                            );
+                          },
+                        ),
+                        _QuickChip(
+                          icon: Icons.bar_chart_rounded,
+                          label: "Reports",
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ReportsScreen(api: widget.api),
+                              ),
+                            );
+                          },
+                        ),
+                        _QuickChip(
+                          icon: Icons.storefront_outlined,
+                          label: "Settings",
+                          onTap: _openSettings,
                         ),
                       ],
                     ),

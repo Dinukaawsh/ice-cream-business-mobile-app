@@ -106,6 +106,7 @@ Future<List<int>> buildSaleReceiptEscPos({
   String? customerName,
   String channel = 'Walk-in',
   double returnsCredit = 0,
+  double previousBalance = 0,
   double paidAmount = 0,
   String? notes,
 }) async {
@@ -156,8 +157,9 @@ Future<List<int>> buildSaleReceiptEscPos({
   void divider() => line('-' * thermalLineWidth);
   void blank() => bytes.addAll(generator.feed(1));
 
-  final net = totalAmount - returnsCredit;
-  final remaining = (net - paidAmount).clamp(0, double.infinity);
+  final netToday = totalAmount - returnsCredit;
+  final amountDue = previousBalance + netToday;
+  final remaining = (amountDue - paidAmount).clamp(0, double.infinity);
 
   center(settings.businessName, bold: true);
   if (settings.ownerName != null && settings.ownerName!.isNotEmpty) {
@@ -196,8 +198,12 @@ Future<List<int>> buildSaleReceiptEscPos({
   amountRow('Subtotal', formatMoney(totalAmount));
   if (returnsCredit > 0) {
     amountRow('Returns credit', '-${formatMoney(returnsCredit)}');
-    amountRow('Net', formatMoney(net), bold: true);
+    amountRow('Net today', formatMoney(netToday));
   }
+  if (previousBalance > 0) {
+    amountRow('Previous unpaid', formatMoney(previousBalance));
+  }
+  amountRow('Total due', formatMoney(amountDue), bold: true);
   amountRow('Paid', formatMoney(paidAmount));
   amountRow('Remaining', formatMoney(remaining.toDouble()), bold: true);
 
@@ -222,6 +228,7 @@ Future<void> printSaleReceiptThermal({
   String? customerName,
   String channel = 'Walk-in',
   double returnsCredit = 0,
+  double previousBalance = 0,
   double paidAmount = 0,
   String? notes,
 }) async {
@@ -234,6 +241,7 @@ Future<void> printSaleReceiptThermal({
     customerName: customerName,
     channel: channel,
     returnsCredit: returnsCredit,
+    previousBalance: previousBalance,
     paidAmount: paidAmount,
     notes: notes,
   );
