@@ -1,0 +1,52 @@
+import 'package:flutter/material.dart';
+
+Future<bool> showConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  String confirmLabel = 'Confirm',
+  String cancelLabel = 'Cancel',
+  bool isDanger = false,
+}) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text(title),
+      content: Text(message),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      actions: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
+                  foregroundColor: const Color(0xFF1D4ED8),
+                  side: const BorderSide(color: Color(0xFFBFDBFE)),
+                ),
+                child: Text(cancelLabel),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
+                  backgroundColor: isDanger
+                      ? const Color(0xFFDC2626)
+                      : const Color(0xFF2563EB),
+                ),
+                child: Text(confirmLabel),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+
+  return result ?? false;
+}
