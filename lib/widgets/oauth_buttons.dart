@@ -26,7 +26,7 @@ class _AuthSocialSectionState extends State<AuthSocialSection> {
     try {
       final tokens = provider == "google"
           ? await OAuthService.instance.signInWithGoogle()
-          : await OAuthService.instance.signInWithFacebook();
+          : await OAuthService.instance.signInWithFacebook(context: context);
 
       try {
         final user = await widget.api.oauthLogin(
@@ -60,7 +60,9 @@ class _AuthSocialSectionState extends State<AuthSocialSection> {
     } catch (error) {
       if (!mounted) return;
       final message = error.toString().replaceFirst("Exception: ", "");
-      if (!message.toLowerCase().contains("cancelled")) {
+      debugPrint("OAUTH[$provider] error: $message");
+      if (provider == "facebook" ||
+          !message.toLowerCase().contains("cancelled")) {
         showErrorToast(context, message);
       }
     } finally {

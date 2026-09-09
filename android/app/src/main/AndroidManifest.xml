@@ -80,10 +80,6 @@
             <action android:name="android.support.customtabs.action.CustomTabsService" />
         </intent>
         <package android:name="com.android.chrome" />
-        <package android:name="com.facebook.katana" />
-        <package android:name="com.facebook.lite" />
         <package android:name="com.google.android.gms" />
-        <provider android:authorities="com.facebook.katana.provider.PlatformProvider" />
-        <provider android:authorities="com.facebook.orca.provider.PlatformProvider" />
     </queries>
 </manifest>

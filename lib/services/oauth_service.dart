@@ -2,10 +2,12 @@ import "dart:convert";
 import "dart:math";
 
 import "package:flutter/foundation.dart";
+import "package:flutter/material.dart";
 import "package:flutter_facebook_auth/flutter_facebook_auth.dart";
 import "package:google_sign_in/google_sign_in.dart";
 
 import "../config/app_config.dart";
+import "../screens/facebook_web_login_screen.dart";
 
 class OAuthTokens {
   const OAuthTokens({
@@ -121,11 +123,31 @@ class OAuthService {
     return "Facebook sign-in failed. In Meta → Facebook Login → Settings, add package com.icecream.app.icecream_mobile and both key hashes: $_debugKeyHash (debug) and $_releaseKeyHash (release).";
   }
 
-  Future<OAuthTokens> signInWithFacebook() async {
+  Future<OAuthTokens> signInWithFacebook({BuildContext? context}) async {
     await _ensureFacebook();
+    debugPrint(
+      "FB login start appId=${AppConfig.facebookAppId} "
+      "tokenSet=${AppConfig.facebookClientToken.isNotEmpty}",
+    );
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        context != null &&
+        context.mounted) {
+      debugPrint("FB attempt in-app webview");
+      final token = await Navigator.of(context).push<String>(
+        MaterialPageRoute(builder: (_) => const FacebookWebLoginScreen()),
+      );
+      if (token == null || token.length < 20) {
+        throw Exception("Facebook sign-in cancelled");
+      }
+      debugPrint("FB token type=classic len=${token.length} jwt=false");
+      return OAuthTokens(provider: "facebook", idToken: token);
+    }
     try {
       await FacebookAuth.instance.logOut();
-    } catch (_) {}
+    } catch (error) {
+      debugPrint("FB logout ignored: $error");
+    }
 
     final nonce = _createNonce();
     var result = await _facebookLogin(
@@ -133,18 +155,29 @@ class OAuthService {
       tracking: LoginTracking.enabled,
       nonce: nonce,
     );
+    debugPrint(
+      "FB attempt web/enabled status=${result.status} "
+      "message=${result.message} type=${result.accessToken?.type}",
+    );
 
     if (result.status != LoginStatus.success &&
         result.status != LoginStatus.cancelled) {
       result = await _facebookLogin(
-        behavior: LoginBehavior.nativeWithFallback,
+        behavior: LoginBehavior.webOnly,
         tracking: LoginTracking.limited,
         nonce: nonce,
+      );
+      debugPrint(
+        "FB attempt web/limited status=${result.status} message=${result.message}",
       );
     }
 
     if (result.status == LoginStatus.cancelled) {
-      throw Exception("Facebook sign-in cancelled");
+      throw Exception(
+        result.message?.trim().isNotEmpty == true
+            ? "Facebook cancelled: ${result.message}"
+            : "Facebook sign-in cancelled",
+      );
     }
     if (result.status != LoginStatus.success) {
       throw Exception(_facebookFailMessage(result));
@@ -154,6 +187,9 @@ class OAuthService {
       throw Exception("Facebook did not return an access token");
     }
     final token = access.tokenString;
+    debugPrint(
+      "FB token type=${access.type} len=${token.length} jwt=${token.split(".").length == 3}",
+    );
     if (token.length < 20) {
       throw Exception("Facebook did not return an access token");
     }
