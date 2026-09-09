@@ -1,8 +1,11 @@
 import "package:flutter/material.dart";
 import "package:google_fonts/google_fonts.dart";
+import "package:printing/printing.dart";
 
+import "../models/business_settings.dart";
 import "../models/sale.dart";
 import "../services/api_service.dart";
+import "../utils/report_pdf.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
 
@@ -19,7 +22,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
   late DateTime _from;
   late DateTime _to;
   ReportSummary? _report;
+  BusinessSettings? _settings;
   var _loading = false;
+  var _exporting = false;
 
   @override
   void initState() {
@@ -34,8 +39,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
     setState(() => _loading = true);
     try {
       final report = await widget.api.fetchReport(from: _from, to: _to);
+      BusinessSettings? settings = _settings;
+      try {
+        settings = await widget.api.fetchBusinessSettings();
+      } catch (_) {}
       if (!mounted) return;
-      setState(() => _report = report);
+      setState(() {
+        _report = report;
+        _settings = settings;
+      });
     } catch (error) {
       if (!mounted) return;
       showErrorToast(
@@ -88,6 +100,32 @@ class _ReportsScreenState extends State<ReportsScreen> {
     _load();
   }
 
+  Future<void> _downloadPdf() async {
+    final report = _report;
+    if (report == null || _exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final bytes = await buildReportPdf(
+        report: report,
+        from: _from,
+        to: _to,
+        settings: _settings,
+      );
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: reportPdfFileName(from: _from, to: _to),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      showErrorToast(
+        context,
+        error.toString().replaceFirst("Exception: ", ""),
+      );
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final report = _report;
@@ -103,6 +141,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
             color: AuthColors.blueberry,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: "Download PDF",
+            onPressed: _report == null || _loading || _exporting
+                ? null
+                : _downloadPdf,
+            icon: _exporting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.picture_as_pdf_outlined),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -174,6 +227,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ),
               ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _exporting ? null : _downloadPdf,
+              icon: const Icon(Icons.download_rounded),
+              label: Text(_exporting ? "Preparing PDF..." : "Download PDF"),
+            ),
             const SizedBox(height: 16),
             Text(
               "Daily breakdown",

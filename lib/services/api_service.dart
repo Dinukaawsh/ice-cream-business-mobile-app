@@ -1,5 +1,6 @@
 import "dart:convert";
 
+import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "package:http/http.dart" as http;
 import "package:shared_preferences/shared_preferences.dart";
 
@@ -41,25 +42,39 @@ class SessionUser {
 class ApiService {
   ApiService({http.Client? client}) : _client = client ?? http.Client();
 
+  static const _tokenKey = "auth_token";
+  static const _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+
   final http.Client _client;
   final String _baseUrl = AppConfig.apiBaseUrl;
   String? _token;
 
   Future<void> loadToken() async {
+    _token = await _secureStorage.read(key: _tokenKey);
+    if (_token != null && _token!.isNotEmpty) return;
+
     final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString("auth_token");
+    final legacy = prefs.getString(_tokenKey);
+    if (legacy == null || legacy.isEmpty) return;
+    await _saveToken(legacy);
+    await prefs.remove(_tokenKey);
   }
 
   Future<void> _saveToken(String token) async {
     _token = token;
+    await _secureStorage.write(key: _tokenKey, value: token);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("auth_token", token);
+    await prefs.remove(_tokenKey);
   }
 
   Future<void> clearToken() async {
     _token = null;
+    await _secureStorage.delete(key: _tokenKey);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("auth_token");
+    await prefs.remove(_tokenKey);
   }
 
   Map<String, String> _headers({bool auth = false}) {
