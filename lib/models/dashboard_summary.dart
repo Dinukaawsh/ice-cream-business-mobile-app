@@ -57,6 +57,31 @@ class DashboardSummary {
   final List<DashboardFlavor> topFlavors;
   final List<DashboardPoint> channelSplit;
 
+  factory DashboardSummary.emptyLive() {
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    final now = DateTime.now();
+    final weekStart = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: 6));
+    return DashboardSummary(
+      isSample: false,
+      todaySales: 0,
+      weekSales: 0,
+      monthSales: 0,
+      ordersToday: 0,
+      returnsCreditToday: 0,
+      avgTicket: 0,
+      weekly: List.generate(7, (index) {
+        final date = weekStart.add(Duration(days: index));
+        return DashboardPoint(label: days[date.weekday % 7], amount: 0);
+      }),
+      topFlavors: const [],
+      channelSplit: const [
+        DashboardPoint(label: "Walk-in", amount: 0),
+        DashboardPoint(label: "Shop", amount: 0),
+      ],
+    );
+  }
+
   factory DashboardSummary.fromJson(Map<String, dynamic> json) {
     return DashboardSummary(
       isSample: json['isSample'] as bool? ?? false,

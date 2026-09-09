@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../services/api_service.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
+import "../widgets/oauth_buttons.dart";
 import "forgot_password_screen.dart";
 import "home_screen.dart";
 import "register_screen.dart";
@@ -138,6 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       loading: _loading,
                       onPressed: _loading ? null : _submit,
                     ),
+                    AuthSocialSection(api: widget.api, enabled: !_loading),
                     const SizedBox(height: 14),
                     AuthGhostButton(
                       label: "Create your shop account",

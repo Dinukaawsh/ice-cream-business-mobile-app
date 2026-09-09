@@ -451,6 +451,115 @@ class AuthGhostButton extends StatelessWidget {
   }
 }
 
+class AuthOrDivider extends StatelessWidget {
+  const AuthOrDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Divider(color: AuthColors.blueberry.withValues(alpha: 0.12)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            "or continue with",
+            style: authBodyStyle(
+              size: 12,
+              weight: FontWeight.w600,
+              color: AuthColors.muted,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Divider(color: AuthColors.blueberry.withValues(alpha: 0.12)),
+        ),
+      ],
+    );
+  }
+}
+
+enum AuthSocialProvider { google, facebook }
+
+class AuthSocialButton extends StatelessWidget {
+  const AuthSocialButton({
+    super.key,
+    required this.label,
+    required this.provider,
+    required this.onPressed,
+    this.loading = false,
+  });
+
+  final String label;
+  final AuthSocialProvider provider;
+  final VoidCallback? onPressed;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final isGoogle = provider == AuthSocialProvider.google;
+    final mark = isGoogle ? "G" : "f";
+    final markColor = isGoogle ? const Color(0xFFEA4335) : const Color(0xFF1877F2);
+
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: OutlinedButton(
+        onPressed: loading ? null : onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AuthColors.ink,
+          side: BorderSide(
+            color: AuthColors.blueberry.withValues(alpha: 0.14),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          backgroundColor: Colors.white.withValues(alpha: 0.72),
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.2),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: markColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      mark,
+                      style: TextStyle(
+                        color: markColor,
+                        fontWeight: FontWeight.w800,
+                        fontSize: isGoogle ? 14 : 18,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    label,
+                    style: authBodyStyle(
+                      size: 15,
+                      weight: FontWeight.w600,
+                      color: AuthColors.ink,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
 class AuthSectionLabel extends StatelessWidget {
   const AuthSectionLabel(this.text, {super.key});
 

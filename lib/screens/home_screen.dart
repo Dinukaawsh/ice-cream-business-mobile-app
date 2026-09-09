@@ -19,36 +19,6 @@ import "returns_screen.dart";
 import "sale_screen.dart";
 import "sales_list_screen.dart";
 
-const _sampleDashboardJson = {
-  "isSample": true,
-  "todaySales": 18450,
-  "weekSales": 96200,
-  "monthSales": 386400,
-  "ordersToday": 24,
-  "returnsCreditToday": 1450,
-  "avgTicket": 768.75,
-  "weekly": [
-    {"label": "Mon", "amount": 11200},
-    {"label": "Tue", "amount": 9800},
-    {"label": "Wed", "amount": 14300},
-    {"label": "Thu", "amount": 12600},
-    {"label": "Fri", "amount": 16800},
-    {"label": "Sat", "amount": 19200},
-    {"label": "Sun", "amount": 12300},
-  ],
-  "topFlavors": [
-    {"name": "Vanilla", "amount": 28600, "share": 0.3},
-    {"name": "Chocolate", "amount": 24100, "share": 0.25},
-    {"name": "Strawberry", "amount": 18400, "share": 0.19},
-    {"name": "Mango", "amount": 15200, "share": 0.16},
-    {"name": "Other", "amount": 9900, "share": 0.1},
-  ],
-  "channelSplit": [
-    {"label": "Walk-in", "amount": 54800},
-    {"label": "Shop", "amount": 41400},
-  ],
-};
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.api, required this.user});
 
@@ -63,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   BusinessSettings? _settings;
   DashboardSummary? _dashboard;
   var _loading = true;
+  String? _dashboardError;
 
   @override
   void initState() {
@@ -71,24 +42,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _dashboardError = null;
+    });
     try {
       final settings = await widget.api.fetchBusinessSettings();
       DashboardSummary dashboard;
+      String? dashboardError;
       try {
         dashboard = await widget.api.fetchDashboardSummary();
-      } catch (_) {
-        dashboard = DashboardSummary.fromJson(_sampleDashboardJson);
+      } catch (error) {
+        dashboard = DashboardSummary.emptyLive();
+        dashboardError = error.toString().replaceFirst("Exception: ", "");
       }
       if (!mounted) return;
       setState(() {
         _settings = settings;
         _dashboard = dashboard;
+        _dashboardError = dashboardError;
       });
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _dashboard = DashboardSummary.fromJson(_sampleDashboardJson);
+        _dashboard ??= DashboardSummary.emptyLive();
+        _dashboardError = error.toString().replaceFirst("Exception: ", "");
       });
       showErrorToast(
         context,
@@ -97,6 +75,12 @@ class _HomeScreenState extends State<HomeScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _openAndRefresh(Widget page) async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+    if (!mounted) return;
+    await _load();
   }
 
   Future<void> _confirmLogout() async {
@@ -117,13 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openSettings() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => BusinessSettingsScreen(api: widget.api),
-      ),
-    );
-    if (!mounted) return;
-    await _load();
+    await _openAndRefresh(BusinessSettingsScreen(api: widget.api));
   }
 
   String _money(double value) {
@@ -174,11 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => SaleScreen(api: widget.api)),
-          );
-        },
+        onPressed: () => _openAndRefresh(SaleScreen(api: widget.api)),
         backgroundColor: AuthColors.primary,
         icon: const Icon(Icons.add_shopping_cart_rounded),
         label: const Text("New sale"),
@@ -247,11 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text("Products"),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ProductsScreen(api: widget.api),
-                    ),
-                  );
+                  _openAndRefresh(ProductsScreen(api: widget.api));
                 },
               ),
               ListTile(
@@ -259,11 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text("Customers"),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CustomersScreen(api: widget.api),
-                    ),
-                  );
+                  _openAndRefresh(CustomersScreen(api: widget.api));
                 },
               ),
               ListTile(
@@ -271,11 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text("Sales"),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => SalesListScreen(api: widget.api),
-                    ),
-                  );
+                  _openAndRefresh(SalesListScreen(api: widget.api));
                 },
               ),
               ListTile(
@@ -283,11 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text("Returns"),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ReturnsScreen(api: widget.api),
-                    ),
-                  );
+                  _openAndRefresh(ReturnsScreen(api: widget.api));
                 },
               ),
               ListTile(
@@ -295,11 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text("Reports"),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ReportsScreen(api: widget.api),
-                    ),
-                  );
+                  _openAndRefresh(ReportsScreen(api: widget.api));
                 },
               ),
               ListTile(
@@ -315,11 +269,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text("Bluetooth printer"),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const PrinterSettingsScreen(),
-                    ),
-                  );
+                  _openAndRefresh(const PrinterSettingsScreen());
                 },
               ),
               ListTile(
@@ -370,8 +320,39 @@ class _HomeScreenState extends State<HomeScreen> {
                     businessName: businessName,
                     ownerName: settings?.ownerName ?? widget.user.name,
                     logoUrl: logoUrl,
-                    isSample: dash?.isSample ?? true,
+                    isSample: dash?.isSample ?? false,
+                    loadError: _dashboardError,
                   ),
+                  if (_dashboardError != null) ...[
+                    const SizedBox(height: 12),
+                    Material(
+                      color: const Color(0xFFFFE4E6),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.wifi_off_rounded,
+                              color: Color(0xFFBE123C),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                "Couldn’t refresh live charts. Pull to retry.",
+                                style: authBodyStyle(
+                                  size: 13,
+                                  weight: FontWeight.w600,
+                                  color: const Color(0xFF9F1239),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 18),
                   if (dash != null) ...[
                     Row(
@@ -463,58 +444,33 @@ class _HomeScreenState extends State<HomeScreen> {
                         _QuickChip(
                           icon: Icons.add_shopping_cart_rounded,
                           label: "New sale",
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => SaleScreen(api: widget.api),
-                              ),
-                            );
-                          },
+                          onTap: () =>
+                              _openAndRefresh(SaleScreen(api: widget.api)),
                         ),
                         _QuickChip(
                           icon: Icons.icecream_outlined,
                           label: "Products",
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ProductsScreen(api: widget.api),
-                              ),
-                            );
-                          },
+                          onTap: () =>
+                              _openAndRefresh(ProductsScreen(api: widget.api)),
                         ),
                         _QuickChip(
                           icon: Icons.people_outline,
                           label: "Customers",
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    CustomersScreen(api: widget.api),
-                              ),
-                            );
-                          },
+                          onTap: () => _openAndRefresh(
+                            CustomersScreen(api: widget.api),
+                          ),
                         ),
                         _QuickChip(
                           icon: Icons.assignment_return_outlined,
                           label: "Returns",
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ReturnsScreen(api: widget.api),
-                              ),
-                            );
-                          },
+                          onTap: () =>
+                              _openAndRefresh(ReturnsScreen(api: widget.api)),
                         ),
                         _QuickChip(
                           icon: Icons.bar_chart_rounded,
                           label: "Reports",
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => ReportsScreen(api: widget.api),
-                              ),
-                            );
-                          },
+                          onTap: () =>
+                              _openAndRefresh(ReportsScreen(api: widget.api)),
                         ),
                         _QuickChip(
                           icon: Icons.storefront_outlined,
@@ -537,15 +493,23 @@ class _HeroHeader extends StatelessWidget {
     required this.ownerName,
     required this.logoUrl,
     required this.isSample,
+    this.loadError,
   });
 
   final String businessName;
   final String ownerName;
   final String? logoUrl;
   final bool isSample;
+  final String? loadError;
 
   @override
   Widget build(BuildContext context) {
+    final badge = loadError != null
+        ? "Offline · showing zeros"
+        : isSample
+            ? "Sample charts · live after first sale"
+            : "Live sales data";
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -590,23 +554,21 @@ class _HeroHeader extends StatelessWidget {
                   "Hi $ownerName — here's today's scoop",
                   style: const TextStyle(color: Color(0xFFE0F2FE), fontSize: 13),
                 ),
-                if (isSample) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: const Text(
-                      "Sample charts · live after first sale",
-                      style: TextStyle(color: Colors.white, fontSize: 11),
-                    ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
                   ),
-                ],
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    badge,
+                    style: const TextStyle(color: Colors.white, fontSize: 11),
+                  ),
+                ),
               ],
             ),
           ),

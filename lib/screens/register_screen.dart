@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../services/api_service.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
+import "../widgets/oauth_buttons.dart";
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key, required this.api});
@@ -78,7 +79,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 subtitle:
                     "Tell us about your business. These details print on bill headers.",
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
+              AuthSocialSection(api: widget.api, enabled: !_loading),
+              const SizedBox(height: 20),
               const AuthSectionLabel("Business"),
               const SizedBox(height: 12),
               AuthField(

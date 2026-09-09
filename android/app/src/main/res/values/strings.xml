@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Scooply</string>
+    <string name="facebook_app_id">2141188489793325</string>
+    <string name="facebook_client_token">47b9e424f8137f0d5a165557430f4cde</string>
+    <string name="fb_login_protocol_scheme">fb2141188489793325</string>
+</resources>
