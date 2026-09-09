@@ -34,7 +34,19 @@
 				<string>fbREDACTED</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.835410660852-h44cv4plpc2im3ofo1to782eobcjp2mt</string>
+			</array>
+		</dict>
 	</array>
+	<key>GIDClientID</key>
+	<string>835410660852-h44cv4plpc2im3ofo1to782eobcjp2mt.apps.googleusercontent.com</string>
+	<key>GIDServerClientID</key>
+	<string>835410660852-hg7q2o9nj0rlsnqohi4aau9bspm55hio.apps.googleusercontent.com</string>
 	<key>FacebookAppID</key>
 	<string>REDACTED</string>
 	<key>FacebookClientToken</key>

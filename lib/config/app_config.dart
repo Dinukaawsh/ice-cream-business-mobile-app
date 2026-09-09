@@ -10,11 +10,15 @@ class AppConfig {
   /// flutter run --dart-define-from-file=oauth.defines.json
   static const String googleServerClientId = String.fromEnvironment(
     "GOOGLE_SERVER_CLIENT_ID",
+    defaultValue:
+        "835410660852-hg7q2o9nj0rlsnqohi4aau9bspm55hio.apps.googleusercontent.com",
   );
 
   /// iOS OAuth client ID from Google Cloud (optional, Android does not need this).
   static const String googleIosClientId = String.fromEnvironment(
     "GOOGLE_IOS_CLIENT_ID",
+    defaultValue:
+        "835410660852-h44cv4plpc2im3ofo1to782eobcjp2mt.apps.googleusercontent.com",
   );
 
   /// Meta / Facebook App ID (also set in Android strings.xml + iOS Info.plist).
