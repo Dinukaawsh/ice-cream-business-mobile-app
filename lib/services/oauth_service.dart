@@ -1,3 +1,6 @@
+import "dart:convert";
+import "dart:math";
+
 import "package:flutter/foundation.dart";
 import "package:flutter_facebook_auth/flutter_facebook_auth.dart";
 import "package:google_sign_in/google_sign_in.dart";
@@ -5,10 +8,15 @@ import "package:google_sign_in/google_sign_in.dart";
 import "../config/app_config.dart";
 
 class OAuthTokens {
-  const OAuthTokens({required this.provider, required this.idToken});
+  const OAuthTokens({
+    required this.provider,
+    required this.idToken,
+    this.nonce,
+  });
 
   final String provider;
   final String idToken;
+  final String? nonce;
 }
 
 class OAuthService {
@@ -19,17 +27,29 @@ class OAuthService {
   GoogleSignIn? _google;
   var _facebookReady = false;
 
+  String _createNonce() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    return base64Url.encode(bytes).replaceAll("=", "");
+  }
+
   Future<void> _ensureGoogle() async {
     if (_google != null) return;
     if (!AppConfig.isGoogleConfigured) {
       throw Exception(
-        "Google sign-in is not configured. Set GOOGLE_SERVER_CLIENT_ID.",
+        "Google sign-in is not configured. Add your Web client ID to mobile/oauth.defines.json as GOOGLE_SERVER_CLIENT_ID, then run with --dart-define-from-file=oauth.defines.json.",
       );
     }
+    final webClientId = AppConfig.googleServerClientId.trim();
+    final iosClientId = AppConfig.googleIosClientId.trim();
     _google = GoogleSignIn(
-      scopes: const ["email", "profile"],
-      serverClientId: AppConfig.googleServerClientId.trim(),
-      clientId: kIsWeb ? AppConfig.googleServerClientId.trim() : null,
+      scopes: const ["email", "profile", "openid"],
+      serverClientId: webClientId,
+      clientId: kIsWeb
+          ? webClientId
+          : (defaultTargetPlatform == TargetPlatform.iOS && iosClientId.isNotEmpty
+              ? iosClientId
+              : null),
     );
   }
 
@@ -61,7 +81,7 @@ class OAuthService {
     final idToken = auth.idToken;
     if (idToken == null || idToken.length < 20) {
       throw Exception(
-        "Google did not return an ID token. Check GOOGLE_SERVER_CLIENT_ID matches the Web client ID.",
+        "Google did not return an ID token. Use the Web OAuth client ID as GOOGLE_SERVER_CLIENT_ID, and register this app's SHA-1 in Google Cloud.",
       );
     }
     return OAuthTokens(provider: "google", idToken: idToken);
@@ -69,20 +89,45 @@ class OAuthService {
 
   Future<OAuthTokens> signInWithFacebook() async {
     await _ensureFacebook();
-    final result = await FacebookAuth.instance.login(
+    final nonce = _createNonce();
+    var result = await FacebookAuth.instance.login(
       permissions: const ["email", "public_profile"],
+      loginBehavior: LoginBehavior.nativeWithFallback,
+      loginTracking: LoginTracking.enabled,
+      nonce: nonce,
     );
+    if (result.status != LoginStatus.success &&
+        result.status != LoginStatus.cancelled) {
+      result = await FacebookAuth.instance.login(
+        permissions: const ["email", "public_profile"],
+        loginBehavior: LoginBehavior.nativeWithFallback,
+        loginTracking: LoginTracking.limited,
+        nonce: nonce,
+      );
+    }
     if (result.status == LoginStatus.cancelled) {
       throw Exception("Facebook sign-in cancelled");
     }
     if (result.status != LoginStatus.success) {
-      throw Exception(result.message ?? "Facebook sign-in failed");
+      throw Exception(
+        result.message?.trim().isNotEmpty == true
+            ? result.message!
+            : "Facebook sign-in failed. Add the Android key hash from the README in Meta Developer settings.",
+      );
     }
-    final token = result.accessToken?.tokenString;
-    if (token == null || token.length < 20) {
+    final access = result.accessToken;
+    if (access == null) {
       throw Exception("Facebook did not return an access token");
     }
-    return OAuthTokens(provider: "facebook", idToken: token);
+    final token = access.tokenString;
+    if (token.length < 20) {
+      throw Exception("Facebook did not return an access token");
+    }
+    return OAuthTokens(
+      provider: "facebook",
+      idToken: token,
+      nonce: nonce,
+    );
   }
 
   Future<void> signOutProviders() async {

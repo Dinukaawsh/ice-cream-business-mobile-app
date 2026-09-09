@@ -32,6 +32,7 @@ class _AuthSocialSectionState extends State<AuthSocialSection> {
         final user = await widget.api.oauthLogin(
           provider: tokens.provider,
           idToken: tokens.idToken,
+          nonce: tokens.nonce,
         );
         if (!mounted) return;
         showSuccessToast(context, "Signed in");
@@ -49,6 +50,7 @@ class _AuthSocialSectionState extends State<AuthSocialSection> {
               api: widget.api,
               provider: tokens.provider,
               idToken: tokens.idToken,
+              nonce: tokens.nonce,
               email: required.email,
               name: required.name,
             ),

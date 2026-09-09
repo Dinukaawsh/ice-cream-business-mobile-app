@@ -13,6 +13,7 @@ class OAuthCompleteRegistrationScreen extends StatefulWidget {
     required this.idToken,
     required this.email,
     required this.name,
+    this.nonce,
   });
 
   final ApiService api;
@@ -20,6 +21,7 @@ class OAuthCompleteRegistrationScreen extends StatefulWidget {
   final String idToken;
   final String email;
   final String name;
+  final String? nonce;
 
   @override
   State<OAuthCompleteRegistrationScreen> createState() =>
@@ -55,6 +57,7 @@ class _OAuthCompleteRegistrationScreenState
       final user = await widget.api.oauthLogin(
         provider: widget.provider,
         idToken: widget.idToken,
+        nonce: widget.nonce,
         businessName: name,
       );
       if (!mounted) return;

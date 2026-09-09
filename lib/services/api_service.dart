@@ -546,6 +546,7 @@ class ApiService {
     required String provider,
     required String idToken,
     String? businessName,
+    String? nonce,
   }) async {
     final response = await _client.post(
       Uri.parse("$_baseUrl/api/auth/oauth"),
@@ -554,6 +555,7 @@ class ApiService {
         "provider": provider,
         "idToken": idToken,
         "businessName": ?businessName,
+        "nonce": ?nonce,
       }),
     );
     final data = jsonDecode(response.body) as Map<String, dynamic>;

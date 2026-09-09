@@ -7,23 +7,28 @@ class AppConfig {
   );
 
   /// Google Cloud **Web** OAuth client ID (must match server GOOGLE_CLIENT_ID).
-  /// --dart-define=GOOGLE_SERVER_CLIENT_ID=xxxxx.apps.googleusercontent.com
+  /// flutter run --dart-define-from-file=oauth.defines.json
   static const String googleServerClientId = String.fromEnvironment(
     "GOOGLE_SERVER_CLIENT_ID",
+  );
+
+  /// iOS OAuth client ID from Google Cloud (optional, Android does not need this).
+  static const String googleIosClientId = String.fromEnvironment(
+    "GOOGLE_IOS_CLIENT_ID",
   );
 
   /// Meta / Facebook App ID (also set in Android strings.xml + iOS Info.plist).
   /// --dart-define=FACEBOOK_APP_ID=1234567890
   static const String facebookAppId = String.fromEnvironment(
     "FACEBOOK_APP_ID",
-    defaultValue: "2141188489793325",
+    defaultValue: "REDACTED",
   );
 
   /// Facebook Client Token from Meta developer console.
   /// --dart-define=FACEBOOK_CLIENT_TOKEN=...
   static const String facebookClientToken = String.fromEnvironment(
     "FACEBOOK_CLIENT_TOKEN",
-    defaultValue: "47b9e424f8137f0d5a165557430f4cde",
+    defaultValue: "REDACTED",
   );
 
   static bool get isGoogleConfigured => googleServerClientId.trim().isNotEmpty;
