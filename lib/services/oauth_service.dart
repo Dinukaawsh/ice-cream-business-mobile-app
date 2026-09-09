@@ -27,6 +27,9 @@ class OAuthService {
   GoogleSignIn? _google;
   var _facebookReady = false;
 
+  static const _releaseKeyHash = "78SiNQuLCRNGfPCwfmlxVfxUjKg=";
+  static const _debugKeyHash = "zq+VIarr0khKGR4cRCmi1WloaP0=";
+
   String _createNonce() {
     final random = Random.secure();
     final bytes = List<int>.generate(16, (_) => random.nextInt(256));
@@ -47,7 +50,8 @@ class OAuthService {
       serverClientId: webClientId,
       clientId: kIsWeb
           ? webClientId
-          : (defaultTargetPlatform == TargetPlatform.iOS && iosClientId.isNotEmpty
+          : (defaultTargetPlatform == TargetPlatform.iOS &&
+                  iosClientId.isNotEmpty
               ? iosClientId
               : null),
     );
@@ -71,8 +75,19 @@ class OAuthService {
     _facebookReady = true;
   }
 
-  Future<OAuthTokens> signInWithGoogle() async {
+  Future<void> _clearGoogleSession() async {
     await _ensureGoogle();
+    try {
+      await _google!.disconnect();
+    } catch (_) {
+      try {
+        await _google!.signOut();
+      } catch (_) {}
+    }
+  }
+
+  Future<OAuthTokens> signInWithGoogle() async {
+    await _clearGoogleSession();
     final account = await _google!.signIn();
     if (account == null) {
       throw Exception("Google sign-in cancelled");
@@ -87,33 +102,52 @@ class OAuthService {
     return OAuthTokens(provider: "google", idToken: idToken);
   }
 
-  Future<OAuthTokens> signInWithFacebook() async {
-    await _ensureFacebook();
-    final nonce = _createNonce();
-    var result = await FacebookAuth.instance.login(
+  Future<LoginResult> _facebookLogin({
+    required LoginBehavior behavior,
+    required LoginTracking tracking,
+    required String nonce,
+  }) {
+    return FacebookAuth.instance.login(
       permissions: const ["email", "public_profile"],
-      loginBehavior: LoginBehavior.nativeWithFallback,
-      loginTracking: LoginTracking.enabled,
+      loginBehavior: behavior,
+      loginTracking: tracking,
       nonce: nonce,
     );
+  }
+
+  String _facebookFailMessage(LoginResult result) {
+    final raw = result.message?.trim() ?? "";
+    if (raw.isNotEmpty) return raw;
+    return "Facebook sign-in failed. In Meta → Facebook Login → Settings, add package com.icecream.app.icecream_mobile and both key hashes: $_debugKeyHash (debug) and $_releaseKeyHash (release).";
+  }
+
+  Future<OAuthTokens> signInWithFacebook() async {
+    await _ensureFacebook();
+    try {
+      await FacebookAuth.instance.logOut();
+    } catch (_) {}
+
+    final nonce = _createNonce();
+    var result = await _facebookLogin(
+      behavior: LoginBehavior.webOnly,
+      tracking: LoginTracking.enabled,
+      nonce: nonce,
+    );
+
     if (result.status != LoginStatus.success &&
         result.status != LoginStatus.cancelled) {
-      result = await FacebookAuth.instance.login(
-        permissions: const ["email", "public_profile"],
-        loginBehavior: LoginBehavior.nativeWithFallback,
-        loginTracking: LoginTracking.limited,
+      result = await _facebookLogin(
+        behavior: LoginBehavior.nativeWithFallback,
+        tracking: LoginTracking.limited,
         nonce: nonce,
       );
     }
+
     if (result.status == LoginStatus.cancelled) {
       throw Exception("Facebook sign-in cancelled");
     }
     if (result.status != LoginStatus.success) {
-      throw Exception(
-        result.message?.trim().isNotEmpty == true
-            ? result.message!
-            : "Facebook sign-in failed. Add the Android key hash from the README in Meta Developer settings.",
-      );
+      throw Exception(_facebookFailMessage(result));
     }
     final access = result.accessToken;
     if (access == null) {
@@ -132,8 +166,13 @@ class OAuthService {
 
   Future<void> signOutProviders() async {
     try {
-      await _google?.signOut();
-    } catch (_) {}
+      await _ensureGoogle();
+      await _google!.disconnect();
+    } catch (_) {
+      try {
+        await _google?.signOut();
+      } catch (_) {}
+    }
     try {
       await FacebookAuth.instance.logOut();
     } catch (_) {}

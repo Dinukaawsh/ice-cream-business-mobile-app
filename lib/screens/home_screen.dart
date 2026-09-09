@@ -6,6 +6,7 @@ import "../config/brand.dart";
 import "../models/business_settings.dart";
 import "../models/dashboard_summary.dart";
 import "../services/api_service.dart";
+import "../services/oauth_service.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
 import "../widgets/confirm_dialog.dart";
@@ -92,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
       isDanger: true,
     );
     if (!shouldLogout || !mounted) return;
+    await OAuthService.instance.signOutProviders();
     await widget.api.clearToken();
     if (!mounted) return;
     showSuccessToast(context, "Logged out");
