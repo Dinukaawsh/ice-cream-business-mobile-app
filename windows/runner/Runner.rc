@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.icecream.app" "\0"
-            VALUE "FileDescription", "icecream_mobile" "\0"
+            VALUE "CompanyName", "Scooply" "\0"
+            VALUE "FileDescription", "Scooply" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "icecream_mobile" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.icecream.app. All rights reserved." "\0"
-            VALUE "OriginalFilename", "icecream_mobile.exe" "\0"
-            VALUE "ProductName", "icecream_mobile" "\0"
+            VALUE "InternalName", "Scooply" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Scooply. All rights reserved." "\0"
+            VALUE "OriginalFilename", "scooply.exe" "\0"
+            VALUE "ProductName", "Scooply" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -313,7 +313,7 @@ class ThermalPrinterService {
       final ok = await _writeBytes([
         ...generator.reset(),
         ...generator.text(
-          'Ice Cream printer test',
+          'Scooply printer test',
           styles: const PosStyles(align: PosAlign.center, bold: true),
         ),
         ...generator.text('OK'),

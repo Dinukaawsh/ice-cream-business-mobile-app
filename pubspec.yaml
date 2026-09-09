@@ -1,5 +1,5 @@
 name: icecream_mobile
-description: Ice cream business owner mobile app
+description: Scooply — POS for ice cream shops
 publish_to: "none"
 version: 1.0.0+1
 
@@ -24,6 +24,28 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/brand/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/brand/launcher.png
+  adaptive_icon_background: "#C8ECFF"
+  adaptive_icon_foreground: assets/brand/launcher.png
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: assets/brand/launcher.png
+    background_color: "#C8ECFF"
+    theme_color: "#2F6FED"
+  windows:
+    generate: true
+    image_path: assets/brand/launcher.png
+  macos:
+    generate: true
+    image_path: assets/brand/launcher.png

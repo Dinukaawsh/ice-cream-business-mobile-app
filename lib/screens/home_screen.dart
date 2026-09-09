@@ -2,6 +2,7 @@ import "package:fl_chart/fl_chart.dart";
 import "package:flutter/material.dart";
 import "package:google_fonts/google_fonts.dart";
 
+import "../config/brand.dart";
 import "../models/business_settings.dart";
 import "../models/dashboard_summary.dart";
 import "../services/api_service.dart";
@@ -140,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final settings = _settings;
     final dash = _dashboard;
     final logoUrl = settings?.logoUrl;
-    final businessName = settings?.businessName ?? "Ice Cream";
+    final businessName = settings?.businessName ?? Brand.name;
 
     return Scaffold(
       backgroundColor: AuthColors.frost,
@@ -203,15 +204,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     CircleAvatar(
                       radius: 32,
                       backgroundColor: Colors.white,
-                      backgroundImage:
-                          logoUrl != null ? NetworkImage(logoUrl) : null,
-                      child: logoUrl == null
-                          ? const Icon(
-                              Icons.icecream,
-                              color: Color(0xFF2563EB),
-                              size: 30,
-                            )
-                          : null,
+                      backgroundImage: (logoUrl != null
+                              ? NetworkImage(logoUrl)
+                              : const AssetImage(Brand.logoAsset))
+                          as ImageProvider,
                     ),
                     const SizedBox(height: 14),
                     Text(
@@ -572,10 +568,10 @@ class _HeroHeader extends StatelessWidget {
           CircleAvatar(
             radius: 30,
             backgroundColor: Colors.white,
-            backgroundImage: logoUrl != null ? NetworkImage(logoUrl!) : null,
-            child: logoUrl == null
-                ? const Icon(Icons.icecream, color: Color(0xFF2563EB), size: 28)
-                : null,
+            backgroundImage: (logoUrl != null
+                    ? NetworkImage(logoUrl!)
+                    : const AssetImage(Brand.logoAsset))
+                as ImageProvider,
           ),
           const SizedBox(width: 14),
           Expanded(

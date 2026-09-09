@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
 
     <application
-        android:label="icecream_mobile"
+        android:label="Scooply"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

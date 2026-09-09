@@ -11,7 +11,7 @@ const _printerMessages = <String, String>{
       'No paired printers found. Pair the printer in phone Settings → Bluetooth.',
   'printer.bluetoothOff': 'Turn on Bluetooth to print.',
   'printer.permissionDenied':
-      'Allow Bluetooth permission for Ice Cream in phone settings.',
+      'Allow Bluetooth permission for Scooply in phone settings.',
   'printer.connectFailed': 'Could not connect to the printer.',
   'printer.printFailed': 'Print failed. Try again.',
   'printer.renderFailed': 'Could not prepare the receipt for printing.',

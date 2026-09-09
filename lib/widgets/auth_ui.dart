@@ -4,6 +4,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../config/brand.dart';
+import '../widgets/brand_logo.dart';
+
 /// Soft frost palette — sky ice, mint glaze, blueberry ink.
 class AuthColors {
   static const skyTop = Color(0xFFB9E0FF);
@@ -140,10 +143,10 @@ class _AuthShellState extends State<AuthShell>
                   angle: -0.2 + (t * 0.08),
                   child: Opacity(
                     opacity: 0.18,
-                    child: Icon(
-                      Icons.icecream_rounded,
-                      size: 92,
-                      color: AuthColors.blueberry,
+                    child: Image.asset(
+                      Brand.logoAsset,
+                      width: 92,
+                      height: 92,
                     ),
                   ),
                 ),
@@ -223,33 +226,10 @@ class AuthHero extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: compact ? 44 : 54,
-                height: compact ? 44 : 54,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFFFD0DC), Color(0xFF9FE7D0)],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AuthColors.scoop.withValues(alpha: 0.35),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.icecream_rounded,
-                  color: AuthColors.blueberry,
-                  size: compact ? 24 : 28,
-                ),
-              ),
+              BrandLogo(size: compact ? 44 : 54),
               const SizedBox(width: 12),
               Text(
-                'Ice Cream',
+                Brand.name,
                 style: authBrandStyle(size: compact ? 28 : 34),
               ),
             ],

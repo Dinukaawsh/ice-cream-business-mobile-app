@@ -1,3 +1,5 @@
+import '../config/brand.dart';
+
 class BusinessSettings {
   const BusinessSettings({
     required this.businessName,
@@ -17,7 +19,7 @@ class BusinessSettings {
 
   factory BusinessSettings.fromJson(Map<String, dynamic> json) {
     return BusinessSettings(
-      businessName: json['businessName'] as String? ?? 'Ice Cream',
+      businessName: json['businessName'] as String? ?? Brand.name,
       address: json['address'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
       email: json['email'] as String?,
@@ -27,7 +29,7 @@ class BusinessSettings {
   }
 
   static const fallback = BusinessSettings(
-    businessName: 'Ice Cream',
+    businessName: Brand.name,
     address: '',
     phone: '',
   );

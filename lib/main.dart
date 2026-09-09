@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:google_fonts/google_fonts.dart";
 
+import "config/brand.dart";
 import "screens/home_screen.dart";
 import "screens/login_screen.dart";
 import "services/api_service.dart";
@@ -17,19 +18,19 @@ Future<void> main() async {
   );
   final api = ApiService();
   await api.loadToken();
-  runApp(IceCreamApp(api: api));
+  runApp(ScooplyApp(api: api));
 }
 
-class IceCreamApp extends StatefulWidget {
-  const IceCreamApp({super.key, required this.api});
+class ScooplyApp extends StatefulWidget {
+  const ScooplyApp({super.key, required this.api});
 
   final ApiService api;
 
   @override
-  State<IceCreamApp> createState() => _IceCreamAppState();
+  State<ScooplyApp> createState() => _ScooplyAppState();
 }
 
-class _IceCreamAppState extends State<IceCreamApp> {
+class _ScooplyAppState extends State<ScooplyApp> {
   SessionUser? _user;
   var _booting = true;
 
@@ -62,7 +63,7 @@ class _IceCreamAppState extends State<IceCreamApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "Ice Cream",
+      title: Brand.name,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(

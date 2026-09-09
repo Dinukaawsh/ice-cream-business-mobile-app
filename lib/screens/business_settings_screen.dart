@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../config/brand.dart';
 import '../models/business_settings.dart';
 import '../services/api_service.dart';
 import '../widgets/app_toast.dart';
@@ -175,7 +176,7 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
                 : () {
                     final settings = BusinessSettings(
                       businessName: _businessName.text.trim().isEmpty
-                          ? 'Ice Cream'
+                          ? Brand.name
                           : _businessName.text.trim(),
                       ownerName: _ownerName.text.trim().isEmpty
                           ? null
@@ -213,15 +214,10 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
                       CircleAvatar(
                         radius: 44,
                         backgroundColor: const Color(0xFFDBEAFE),
-                        backgroundImage:
-                            logoUrl != null ? NetworkImage(logoUrl) : null,
-                        child: logoUrl == null
-                            ? const Icon(
-                                Icons.storefront,
-                                size: 36,
-                                color: Color(0xFF1D4ED8),
-                              )
-                            : null,
+                        backgroundImage: (logoUrl != null
+                                ? NetworkImage(logoUrl)
+                                : const AssetImage(Brand.logoAsset))
+                            as ImageProvider,
                       ),
                       const SizedBox(height: 10),
                       Row(
