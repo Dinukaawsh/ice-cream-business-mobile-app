@@ -21,18 +21,13 @@ class AppConfig {
         "835410660852-h44cv4plpc2im3ofo1to782eobcjp2mt.apps.googleusercontent.com",
   );
 
-  /// Meta / Facebook App ID (also set in Android strings.xml + iOS Info.plist).
-  /// --dart-define=FACEBOOK_APP_ID=1234567890
-  static const String facebookAppId = String.fromEnvironment(
-    "FACEBOOK_APP_ID",
-    defaultValue: "REDACTED",
-  );
+  /// Meta / Facebook App ID. Do not commit real values.
+  /// flutter run --dart-define-from-file=oauth.defines.json
+  static const String facebookAppId = String.fromEnvironment("FACEBOOK_APP_ID");
 
-  /// Facebook Client Token from Meta developer console.
-  /// --dart-define=FACEBOOK_CLIENT_TOKEN=...
+  /// Facebook Client Token from Meta developer console. Do not commit real values.
   static const String facebookClientToken = String.fromEnvironment(
     "FACEBOOK_CLIENT_TOKEN",
-    defaultValue: "REDACTED",
   );
 
   static bool get isGoogleConfigured => googleServerClientId.trim().isNotEmpty;

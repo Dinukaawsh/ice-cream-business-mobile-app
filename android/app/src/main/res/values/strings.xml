@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Scooply</string>
-    <string name="facebook_app_id">REDACTED</string>
-    <string name="facebook_client_token">REDACTED</string>
-    <string name="fb_login_protocol_scheme">fbREDACTED</string>
 </resources>

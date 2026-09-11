@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local OAuth / Facebook SDK keys (copy from *.example files)
+oauth.defines.json
+ios/Flutter/FacebookSecrets.xcconfig
