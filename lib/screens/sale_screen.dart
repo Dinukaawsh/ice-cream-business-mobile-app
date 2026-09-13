@@ -4,6 +4,7 @@ import "package:google_fonts/google_fonts.dart";
 import "../models/product.dart";
 import "../models/sale.dart";
 import "../services/api_service.dart";
+import "../widgets/app_chrome.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
 import "sale_detail_screen.dart";
@@ -65,7 +66,13 @@ class _SaleScreenState extends State<SaleScreen> {
       final customers = await widget.api.fetchCustomers();
       if (!mounted) return;
       setState(() {
-        _products = products.where((item) => item.isActive).toList();
+        _products = products
+            .where(
+              (item) =>
+                  item.isActive &&
+                  item.variants.any((variant) => variant.isActive),
+            )
+            .toList();
         _customers = customers.where((item) => item.isActive).toList();
       });
     } catch (error) {
@@ -89,8 +96,10 @@ class _SaleScreenState extends State<SaleScreen> {
     }
 
     ProductItem product = _products.first;
+    final initialVariants =
+        product.variants.where((item) => item.isActive).toList();
     ProductVariant? variant =
-        product.variants.isEmpty ? null : product.variants.first;
+        initialVariants.isEmpty ? null : initialVariants.first;
     final qty = TextEditingController(text: "1");
 
     final ok = await showDialog<bool>(
@@ -116,9 +125,10 @@ class _SaleScreenState extends State<SaleScreen> {
                   if (value == null) return;
                   setLocal(() {
                     product = value;
-                    variant = value.variants.isEmpty
-                        ? null
-                        : value.variants.first;
+                final active = value.variants
+                    .where((item) => item.isActive)
+                    .toList();
+                variant = active.isEmpty ? null : active.first;
                   });
                 },
                 decoration: const InputDecoration(labelText: "Product"),
@@ -128,6 +138,7 @@ class _SaleScreenState extends State<SaleScreen> {
                 // ignore: deprecated_member_use
                 value: variant,
                 items: product.variants
+                    .where((item) => item.isActive)
                     .map(
                       (item) => DropdownMenuItem(
                         value: item,
@@ -240,18 +251,8 @@ class _SaleScreenState extends State<SaleScreen> {
     final credit = _customer?.returnCredit ?? 0;
     final due = _customer?.outstandingBalance ?? 0;
 
-    return Scaffold(
-      backgroundColor: AuthColors.frost,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text(
-          "New sale",
-          style: GoogleFonts.fraunces(
-            fontWeight: FontWeight.w700,
-            color: AuthColors.blueberry,
-          ),
-        ),
-      ),
+    return AppPage(
+      title: "New sale",
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -336,34 +337,73 @@ class _SaleScreenState extends State<SaleScreen> {
                   ],
                 ),
                 if (_cart.isEmpty)
-                  const Text(
-                    "No items yet",
-                    style: TextStyle(color: AuthColors.muted),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text(
+                      "No items yet. Add a scoop to start the bill.",
+                      style: TextStyle(color: AuthColors.muted),
+                    ),
                   )
                 else
                   ..._cart.asMap().entries.map((entry) {
                     final line = entry.value;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        "${line.product.name} (${line.product.flavor})",
-                      ),
-                      subtitle: Text(
-                        "${line.variant.label} × ${line.quantity} = LKR ${line.lineTotal.toStringAsFixed(0)}",
-                      ),
-                      trailing: IconButton(
-                        onPressed: () =>
-                            setState(() => _cart.removeAt(entry.key)),
-                        icon: const Icon(Icons.close, color: Color(0xFFB91C1C)),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: AppSurfaceCard(
+                        padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+                        child: Row(
+                          children: [
+                            const AppIconBadge(icon: Icons.icecream_rounded),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "${line.product.name} (${line.product.flavor})",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: AuthColors.ink,
+                                    ),
+                                  ),
+                                  Text(
+                                    "${line.variant.label} × ${line.quantity}",
+                                    style: const TextStyle(
+                                      color: AuthColors.muted,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              "LKR ${line.lineTotal.toStringAsFixed(0)}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: AuthColors.primaryDeep,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () =>
+                                  setState(() => _cart.removeAt(entry.key)),
+                              icon: const Icon(
+                                Icons.close,
+                                color: Color(0xFFB91C1C),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   }),
-                const Divider(),
-                Text(
-                  "Subtotal: LKR ${_subtotal.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
+                AppSurfaceCard(
+                  child: Text(
+                    "Subtotal  LKR ${_subtotal.toStringAsFixed(0)}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      color: AuthColors.ink,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),

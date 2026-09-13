@@ -9,12 +9,14 @@ class BillLineItem {
     required this.quantity,
     required this.unitPrice,
     this.variantName,
+    this.available = true,
   });
 
   final String productName;
   final String? variantName;
   final int quantity;
   final double unitPrice;
+  final bool available;
 
   double get lineTotal => quantity * unitPrice;
 
@@ -234,6 +236,15 @@ class BillReceiptCard extends StatelessWidget {
                             item.displayName,
                             style: const TextStyle(fontSize: 12),
                           ),
+                          if (!item.available)
+                            const Text(
+                              "No longer available",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFB91C1C),
+                              ),
+                            ),
                           const SizedBox(height: 2),
                           Align(
                             alignment: Alignment.centerRight,

@@ -43,6 +43,7 @@ class SaleLineItem {
     required this.variantLabel,
     required this.quantity,
     required this.unitPrice,
+    this.available = true,
   });
 
   final int productId;
@@ -52,6 +53,7 @@ class SaleLineItem {
   final String variantLabel;
   final int quantity;
   final double unitPrice;
+  final bool available;
 
   double get lineTotal => unitPrice * quantity;
 
@@ -64,6 +66,7 @@ class SaleLineItem {
       variantLabel: json['variantLabel'] as String? ?? '',
       quantity: json['quantity'] as int? ?? 0,
       unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0,
+      available: json['available'] as bool? ?? true,
     );
   }
 }
@@ -166,6 +169,7 @@ class ReportSummary {
         String variantLabel,
         int quantity,
         double amount,
+        bool available,
       })> soldProducts;
 
   factory ReportSummary.fromJson(Map<String, dynamic> json) {
@@ -198,6 +202,7 @@ class ReportSummary {
               variantLabel: item['variantLabel'] as String? ?? '',
               quantity: item['quantity'] as int? ?? 0,
               amount: (item['amount'] as num?)?.toDouble() ?? 0.0,
+              available: item['available'] as bool? ?? true,
             ),
           )
           .toList(),

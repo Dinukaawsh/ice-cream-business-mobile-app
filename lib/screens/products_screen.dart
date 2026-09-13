@@ -1,8 +1,8 @@
 import "package:flutter/material.dart";
-import "package:google_fonts/google_fonts.dart";
 
 import "../models/product.dart";
 import "../services/api_service.dart";
+import "../widgets/app_chrome.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
 import "../widgets/confirm_dialog.dart";
@@ -20,6 +20,11 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> {
   List<ProductItem> _products = [];
   var _loading = true;
+  var _showHidden = false;
+
+  List<ProductItem> get _visibleProducts => _showHidden
+      ? _products
+      : _products.where((product) => product.isActive).toList();
 
   @override
   void initState() {
@@ -55,19 +60,48 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
+  Future<void> _setActive(ProductItem product, {required bool enable}) async {
+    final ok = await showConfirmDialog(
+      context,
+      title: enable ? "Enable product?" : "Disable product?",
+      message: enable
+          ? "Put ${product.name} back on sale?"
+          : "Hide ${product.name} from new sales? Past bills will still show it as no longer available.",
+      confirmLabel: enable ? "Enable" : "Disable",
+      isDanger: !enable,
+    );
+    if (!ok) return;
+    try {
+      final message = await widget.api.setProductActive(
+        id: product.id,
+        isActive: enable,
+      );
+      if (!mounted) return;
+      showSuccessToast(context, message);
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      showErrorToast(
+        context,
+        error.toString().replaceFirst("Exception: ", ""),
+      );
+    }
+  }
+
   Future<void> _delete(ProductItem product) async {
     final ok = await showConfirmDialog(
       context,
       title: "Delete product?",
-      message: "Remove ${product.name}? This cannot be undone.",
+      message:
+          "Remove ${product.name} from the product list? Past bills will still show it as no longer available.",
       confirmLabel: "Delete",
       isDanger: true,
     );
     if (!ok) return;
     try {
-      await widget.api.deleteProduct(id: product.id);
+      final message = await widget.api.deleteProduct(id: product.id);
       if (!mounted) return;
-      showSuccessToast(context, "Product deleted");
+      showSuccessToast(context, message);
       await _load();
     } catch (error) {
       if (!mounted) return;
@@ -80,27 +114,27 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AuthColors.frost,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text(
-          "Products",
-          style: GoogleFonts.fraunces(
-            fontWeight: FontWeight.w700,
-            color: AuthColors.blueberry,
+    return AppPage(
+      title: "Products",
+      actions: [
+        IconButton(
+          tooltip: _showHidden ? "Hide disabled" : "Show disabled",
+          onPressed: () => setState(() => _showHidden = !_showHidden),
+          icon: Icon(
+            _showHidden
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
           ),
         ),
-        actions: [
-          IconButton(
-            onPressed: _loading ? null : _load,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
-      ),
+        IconButton(
+          onPressed: _loading ? null : _load,
+          icon: const Icon(Icons.refresh_rounded),
+        ),
+      ],
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(),
         backgroundColor: AuthColors.primary,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text("Add product"),
       ),
@@ -108,132 +142,110 @@ class _ProductsScreenState extends State<ProductsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
-              child: _products.isEmpty
-                  ? ListView(
-                      padding: const EdgeInsets.all(24),
-                      children: [
-                        const SizedBox(height: 80),
-                        Icon(
-                          Icons.icecream_outlined,
-                          size: 64,
-                          color: AuthColors.primary.withValues(alpha: 0.5),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "No products yet",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.fraunces(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: AuthColors.blueberry,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          "Add scoops, cones, and price variants (Single, Double, Pint…).",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: AuthColors.muted),
-                        ),
-                        const SizedBox(height: 24),
-                        Center(
-                          child: FilledButton.icon(
-                            onPressed: () => _openForm(),
-                            icon: const Icon(Icons.add),
-                            label: const Text("Add your first product"),
-                          ),
-                        ),
-                      ],
+              child: _visibleProducts.isEmpty
+                  ? AppEmptyState(
+                      icon: Icons.icecream_outlined,
+                      title: _showHidden
+                          ? "No disabled products"
+                          : "No products yet",
+                      message:
+                          "Add scoops, cones, and price sizes like Single, Double, or Pint.",
+                      actionLabel: "Add your first product",
+                      onAction: () => _openForm(),
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
-                      itemCount: _products.length,
+                      itemCount: _visibleProducts.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
-                        final product = _products[index];
+                        final product = _visibleProducts[index];
                         final prices = product.variants
                             .map((item) => item.price)
                             .toList();
                         final priceLabel = prices.isEmpty
-                            ? "No variants"
+                            ? "No sizes"
                             : prices.length == 1
                                 ? "LKR ${prices.first.toStringAsFixed(0)}"
                                 : "LKR ${prices.reduce((a, b) => a < b ? a : b).toStringAsFixed(0)} – ${prices.reduce((a, b) => a > b ? a : b).toStringAsFixed(0)}";
 
-                        return Material(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(22),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(22),
-                            onTap: () => _openForm(product: product),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(22),
-                                border: Border.all(
-                                  color: const Color(0xFFBFDBFE),
-                                ),
+                        return AppSurfaceCard(
+                          onTap: () => _openForm(product: product),
+                          child: Row(
+                            children: [
+                              AppIconBadge(
+                                icon: Icons.icecream_rounded,
+                                muted: !product.isActive,
                               ),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor: const Color(0xFFDBEAFE),
-                                    child: Icon(
-                                      Icons.icecream,
-                                      color: product.isActive
-                                          ? AuthColors.primaryDeep
-                                          : AuthColors.muted,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      product.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                        color: AuthColors.ink,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                    Text(
+                                      "${product.flavor}${product.categoryName != null ? " · ${product.categoryName}" : ""}",
+                                      style: const TextStyle(
+                                        color: AuthColors.muted,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
                                       children: [
-                                        Text(
-                                          product.name,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        Text(
-                                          "${product.flavor}${product.categoryName != null ? " · ${product.categoryName}" : ""}",
-                                          style: const TextStyle(
-                                            color: AuthColors.muted,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          "$priceLabel · ${product.variants.length} variant${product.variants.length == 1 ? "" : "s"}",
-                                          style: TextStyle(
-                                            color: AuthColors.primaryDeep,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                        AppStatusChip(label: priceLabel),
+                                        AppStatusChip(
+                                          label:
+                                              "${product.variants.length} size${product.variants.length == 1 ? "" : "s"}",
                                         ),
                                         if (!product.isActive)
-                                          const Text(
-                                            "Inactive",
-                                            style: TextStyle(
-                                              color: Color(0xFFB91C1C),
-                                              fontSize: 12,
-                                            ),
+                                          const AppStatusChip(
+                                            label: "Disabled",
+                                            tone: AppChipTone.danger,
                                           ),
                                       ],
                                     ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () => _delete(product),
-                                    icon: const Icon(
-                                      Icons.delete_outline,
-                                      color: Color(0xFFB91C1C),
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
+                              if (product.isActive)
+                                IconButton(
+                                  tooltip: "Disable",
+                                  onPressed: () =>
+                                      _setActive(product, enable: false),
+                                  icon: const Icon(
+                                    Icons.block,
+                                    color: Color(0xFFB45309),
+                                  ),
+                                )
+                              else ...[
+                                IconButton(
+                                  tooltip: "Enable",
+                                  onPressed: () =>
+                                      _setActive(product, enable: true),
+                                  icon: const Icon(
+                                    Icons.check_circle_outline,
+                                    color: Color(0xFF15803D),
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: "Delete",
+                                  onPressed: () => _delete(product),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Color(0xFFB91C1C),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         );
                       },

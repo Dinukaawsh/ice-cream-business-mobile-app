@@ -5,7 +5,7 @@ import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
 import "../widgets/oauth_buttons.dart";
 import "forgot_password_screen.dart";
-import "home_screen.dart";
+import "main_shell.dart";
 import "register_screen.dart";
 
 class LoginScreen extends StatefulWidget {
@@ -41,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
       showSuccessToast(context, "Signed in");
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => HomeScreen(api: widget.api, user: user),
+          builder: (_) => MainShell(api: widget.api, user: user),
         ),
       );
     } catch (error) {

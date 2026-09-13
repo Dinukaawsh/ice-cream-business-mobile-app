@@ -1,8 +1,8 @@
 import "package:flutter/material.dart";
-import "package:google_fonts/google_fonts.dart";
 
 import "../models/sale.dart";
 import "../services/api_service.dart";
+import "../widgets/app_chrome.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
 import "sale_detail_screen.dart";
@@ -44,20 +44,17 @@ class _SalesListScreenState extends State<SalesListScreen> {
     }
   }
 
+  String _dateLabel(DateTime date) {
+    final local = date.toLocal();
+    final month = local.month.toString().padLeft(2, "0");
+    final day = local.day.toString().padLeft(2, "0");
+    return "${local.year}-$month-$day";
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AuthColors.frost,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text(
-          "Sales",
-          style: GoogleFonts.fraunces(
-            fontWeight: FontWeight.w700,
-            color: AuthColors.blueberry,
-          ),
-        ),
-      ),
+    return AppPage(
+      title: "Sales",
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           await Navigator.of(context).push(
@@ -66,6 +63,7 @@ class _SalesListScreenState extends State<SalesListScreen> {
           if (mounted) await _load();
         },
         backgroundColor: AuthColors.primary,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text("New sale"),
       ),
@@ -74,32 +72,27 @@ class _SalesListScreenState extends State<SalesListScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: _sales.isEmpty
-                  ? ListView(
-                      children: const [
-                        SizedBox(height: 80),
-                        Center(child: Text("No sales yet")),
-                      ],
+                  ? AppEmptyState(
+                      icon: Icons.point_of_sale_outlined,
+                      title: "No sales yet",
+                      message: "Start a sale to see bills and history here.",
+                      actionLabel: "New sale",
+                      onAction: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => SaleScreen(api: widget.api),
+                          ),
+                        );
+                        if (mounted) await _load();
+                      },
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
                       itemCount: _sales.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final sale = _sales[index];
-                        return ListTile(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: const BorderSide(color: Color(0xFFBFDBFE)),
-                          ),
-                          tileColor: Colors.white,
-                          title: Text(sale.displayCustomer),
-                          subtitle: Text(
-                            "${sale.saleDate.toIso8601String().split("T").first} · Sale #${sale.id}",
-                          ),
-                          trailing: Text(
-                            "LKR ${sale.totalAmount.toStringAsFixed(0)}",
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
+                        return AppSurfaceCard(
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
@@ -110,6 +103,42 @@ class _SalesListScreenState extends State<SalesListScreen> {
                               ),
                             );
                           },
+                          child: Row(
+                            children: [
+                              const AppIconBadge(icon: Icons.receipt_long),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      sale.displayCustomer,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                        color: AuthColors.ink,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "${_dateLabel(sale.saleDate)} · Sale #${sale.id}",
+                                      style: const TextStyle(
+                                        color: AuthColors.muted,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                "LKR ${sale.totalAmount.toStringAsFixed(0)}",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: AuthColors.primaryDeep,
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       },
                     ),

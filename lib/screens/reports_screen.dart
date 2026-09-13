@@ -6,6 +6,7 @@ import "../models/business_settings.dart";
 import "../models/sale.dart";
 import "../services/api_service.dart";
 import "../utils/report_pdf.dart";
+import "../widgets/app_chrome.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
 
@@ -130,33 +131,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget build(BuildContext context) {
     final report = _report;
 
-    return Scaffold(
-      backgroundColor: AuthColors.frost,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text(
-          "Reports",
-          style: GoogleFonts.fraunces(
-            fontWeight: FontWeight.w700,
-            color: AuthColors.blueberry,
-          ),
+    return AppPage(
+      title: "Reports",
+      actions: [
+        IconButton(
+          tooltip: "Download PDF",
+          onPressed: _report == null || _loading || _exporting
+              ? null
+              : _downloadPdf,
+          icon: _exporting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.picture_as_pdf_outlined),
         ),
-        actions: [
-          IconButton(
-            tooltip: "Download PDF",
-            onPressed: _report == null || _loading || _exporting
-                ? null
-                : _downloadPdf,
-            icon: _exporting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.picture_as_pdf_outlined),
-          ),
-        ],
-      ),
+      ],
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
@@ -220,7 +211,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 (item) => ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text("${item.productName} · ${item.flavor}"),
-                  subtitle: Text("${item.variantLabel} × ${item.quantity}"),
+                  subtitle: Text(
+                    item.available
+                        ? "${item.variantLabel} × ${item.quantity}"
+                        : "${item.variantLabel} × ${item.quantity} · No longer available",
+                  ),
                   trailing: Text(
                     "LKR ${item.amount.toStringAsFixed(0)}",
                     style: const TextStyle(fontWeight: FontWeight.w700),
@@ -264,19 +259,26 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFBFDBFE)),
-      ),
-      child: Row(
-        children: [
-          Expanded(child: Text(label)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: AppSurfaceCard(
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(color: AuthColors.muted),
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                color: AuthColors.ink,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

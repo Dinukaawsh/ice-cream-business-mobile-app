@@ -330,7 +330,25 @@ class ApiService {
     return ProductItem.fromJson(data["product"] as Map<String, dynamic>);
   }
 
-  Future<void> deleteProduct({required int id}) async {
+  Future<String> setProductActive({
+    required int id,
+    required bool isActive,
+  }) async {
+    final action = isActive ? "enable" : "disable";
+    final response = await _client.patch(
+      Uri.parse("$_baseUrl/api/products?id=$id&action=$action"),
+      headers: _headers(auth: true),
+      body: jsonEncode({}),
+    );
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode != 200) {
+      throw Exception(data["error"] ?? "Could not update product");
+    }
+    return data["message"] as String? ??
+        (isActive ? "Product enabled" : "Product disabled");
+  }
+
+  Future<String> deleteProduct({required int id}) async {
     final response = await _client.delete(
       Uri.parse("$_baseUrl/api/products?id=$id"),
       headers: _headers(auth: true),
@@ -339,6 +357,7 @@ class ApiService {
     if (response.statusCode != 200) {
       throw Exception(data["error"] ?? "Could not delete product");
     }
+    return data["message"] as String? ?? "Product deleted";
   }
 
   Future<List<CustomerItem>> fetchCustomers({String? type}) async {

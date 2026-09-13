@@ -63,7 +63,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       _notes.text = product.notes ?? "";
       _categoryId = product.categoryId;
       _isActive = product.isActive;
-      for (final variant in product.variants) {
+      final visibleVariants = product.variants
+          .where((variant) => variant.isActive)
+          .toList();
+      final source =
+          visibleVariants.isNotEmpty ? visibleVariants : product.variants;
+      for (final variant in source) {
         _variants.add(
           _VariantDraft(
             id: variant.id,
@@ -295,13 +300,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   hint: "Allergen info, display tip…",
                   maxLines: 2,
                   prefixIcon: Icons.notes_outlined,
-                ),
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text("Active / for sale"),
-                  value: _isActive,
-                  onChanged: (value) => setState(() => _isActive = value),
                 ),
                 const SizedBox(height: 12),
                 Row(

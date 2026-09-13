@@ -3,8 +3,8 @@ import "package:flutter/services.dart";
 import "package:google_fonts/google_fonts.dart";
 
 import "config/brand.dart";
-import "screens/home_screen.dart";
 import "screens/login_screen.dart";
+import "screens/main_shell.dart";
 import "services/api_service.dart";
 import "widgets/auth_ui.dart";
 
@@ -74,6 +74,40 @@ class _ScooplyAppState extends State<ScooplyApp> {
         scaffoldBackgroundColor: AuthColors.frost,
         useMaterial3: true,
         textTheme: GoogleFonts.outfitTextTheme(),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AuthColors.frost,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: false,
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: AuthColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 2,
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          indicatorColor: const Color(0xFFDBEAFE),
+          surfaceTintColor: Colors.white,
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            return TextStyle(
+              fontSize: 12,
+              fontWeight: states.contains(WidgetState.selected)
+                  ? FontWeight.w700
+                  : FontWeight.w500,
+              color: states.contains(WidgetState.selected)
+                  ? AuthColors.primaryDeep
+                  : AuthColors.muted,
+            );
+          }),
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
@@ -94,7 +128,7 @@ class _ScooplyAppState extends State<ScooplyApp> {
             )
           : _user == null
               ? LoginScreen(api: widget.api)
-              : HomeScreen(api: widget.api, user: _user!),
+              : MainShell(api: widget.api, user: _user!),
     );
   }
 }

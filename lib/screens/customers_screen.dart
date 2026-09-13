@@ -1,8 +1,8 @@
 import "package:flutter/material.dart";
-import "package:google_fonts/google_fonts.dart";
 
 import "../models/sale.dart";
 import "../services/api_service.dart";
+import "../widgets/app_chrome.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
 import "../widgets/confirm_dialog.dart";
@@ -151,21 +151,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AuthColors.frost,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text(
-          "Customers",
-          style: GoogleFonts.fraunces(
-            fontWeight: FontWeight.w700,
-            color: AuthColors.blueberry,
-          ),
-        ),
-      ),
+    return AppPage(
+      title: "Customers",
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addCustomer,
         backgroundColor: AuthColors.primary,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.person_add_alt_1),
         label: const Text("Add"),
       ),
@@ -193,38 +184,27 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 : RefreshIndicator(
                     onRefresh: _load,
                     child: _customers.isEmpty
-                        ? ListView(
-                            children: const [
-                              SizedBox(height: 80),
-                              Center(child: Text("No customers yet")),
-                            ],
+                        ? AppEmptyState(
+                            icon: Icons.people_outline,
+                            title: "No customers yet",
+                            message: "Add a shop or person to track credit and returns.",
+                            actionLabel: "Add customer",
+                            onAction: _addCustomer,
                           )
                         : ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
                             itemCount: _customers.length,
                             separatorBuilder: (_, _) =>
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final customer = _customers[index];
-                              return Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(
-                                    color: const Color(0xFFBFDBFE),
-                                  ),
-                                ),
+                              return AppSurfaceCard(
                                 child: Row(
                                   children: [
-                                    CircleAvatar(
-                                      backgroundColor: const Color(0xFFDBEAFE),
-                                      child: Icon(
-                                        customer.type == "shop"
-                                            ? Icons.store
-                                            : Icons.person,
-                                        color: AuthColors.primaryDeep,
-                                      ),
+                                    AppIconBadge(
+                                      icon: customer.type == "shop"
+                                          ? Icons.storefront_rounded
+                                          : Icons.person_rounded,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -236,16 +216,35 @@ class _CustomersScreenState extends State<CustomersScreen> {
                                             customer.name,
                                             style: const TextStyle(
                                               fontWeight: FontWeight.w700,
+                                              fontSize: 16,
+                                              color: AuthColors.ink,
                                             ),
                                           ),
-                                          Text(
-                                            customer.type == "shop"
-                                                ? "Shop · credit LKR ${customer.returnCredit.toStringAsFixed(0)} · due LKR ${customer.outstandingBalance.toStringAsFixed(0)}"
-                                                : "Person",
-                                            style: const TextStyle(
-                                              color: AuthColors.muted,
-                                              fontSize: 12,
-                                            ),
+                                          const SizedBox(height: 6),
+                                          Wrap(
+                                            spacing: 6,
+                                            runSpacing: 6,
+                                            children: [
+                                              AppStatusChip(
+                                                label: customer.type == "shop"
+                                                    ? "Shop"
+                                                    : "Person",
+                                              ),
+                                              if (customer.type == "shop") ...[
+                                                AppStatusChip(
+                                                  label:
+                                                      "Due LKR ${customer.outstandingBalance.toStringAsFixed(0)}",
+                                                  tone: customer.outstandingBalance > 0
+                                                      ? AppChipTone.warning
+                                                      : AppChipTone.neutral,
+                                                ),
+                                                AppStatusChip(
+                                                  label:
+                                                      "Credit LKR ${customer.returnCredit.toStringAsFixed(0)}",
+                                                  tone: AppChipTone.success,
+                                                ),
+                                              ],
+                                            ],
                                           ),
                                         ],
                                       ),

@@ -3,7 +3,7 @@ import "package:flutter/material.dart";
 import "../services/api_service.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
-import "home_screen.dart";
+import "main_shell.dart";
 
 class OAuthCompleteRegistrationScreen extends StatefulWidget {
   const OAuthCompleteRegistrationScreen({
@@ -64,7 +64,7 @@ class _OAuthCompleteRegistrationScreenState
       showSuccessToast(context, "Welcome to Scooply");
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => HomeScreen(api: widget.api, user: user),
+          builder: (_) => MainShell(api: widget.api, user: user),
         ),
         (_) => false,
       );

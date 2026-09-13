@@ -14,11 +14,13 @@ class ProductVariant {
   final bool isActive;
 
   factory ProductVariant.fromJson(Map<String, dynamic> json) {
+    final rawId = json['id'];
+    final rawStock = json['stockQty'];
     return ProductVariant(
-      id: json['id'] as int?,
+      id: rawId is int ? rawId : (rawId as num?)?.toInt(),
       label: json['label'] as String? ?? '',
       price: (json['price'] as num?)?.toDouble() ?? 0,
-      stockQty: json['stockQty'] as int? ?? 0,
+      stockQty: rawStock is int ? rawStock : (rawStock as num?)?.toInt() ?? 0,
       isActive: json['isActive'] as bool? ?? true,
     );
   }

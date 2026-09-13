@@ -4,7 +4,7 @@ import "../services/api_service.dart";
 import "../services/oauth_service.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
-import "../screens/home_screen.dart";
+import "../screens/main_shell.dart";
 import "../screens/oauth_complete_registration_screen.dart";
 
 class AuthSocialSection extends StatefulWidget {
@@ -38,7 +38,7 @@ class _AuthSocialSectionState extends State<AuthSocialSection> {
         showSuccessToast(context, "Signed in");
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) => HomeScreen(api: widget.api, user: user),
+            builder: (_) => MainShell(api: widget.api, user: user),
           ),
           (_) => false,
         );

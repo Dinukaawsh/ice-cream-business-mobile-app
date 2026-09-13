@@ -114,7 +114,9 @@ Future<Uint8List> buildReportPdf({
             data: [
               for (final item in report.soldProducts)
                 [
-                  item.productName,
+                  item.available
+                      ? item.productName
+                      : "${item.productName} (no longer available)",
                   item.flavor,
                   item.variantLabel,
                   "${item.quantity}",

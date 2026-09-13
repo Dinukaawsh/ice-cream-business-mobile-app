@@ -6,14 +6,11 @@ import "../config/brand.dart";
 import "../models/business_settings.dart";
 import "../models/dashboard_summary.dart";
 import "../services/api_service.dart";
-import "../services/oauth_service.dart";
+import "../widgets/app_chrome.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
-import "../widgets/confirm_dialog.dart";
 import "business_settings_screen.dart";
 import "customers_screen.dart";
-import "login_screen.dart";
-import "printer_settings_screen.dart";
 import "products_screen.dart";
 import "reports_screen.dart";
 import "returns_screen.dart";
@@ -21,10 +18,16 @@ import "sale_screen.dart";
 import "sales_list_screen.dart";
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.api, required this.user});
+  const HomeScreen({
+    super.key,
+    required this.api,
+    required this.user,
+    this.onOpenTab,
+  });
 
   final ApiService api;
   final SessionUser user;
+  final ValueChanged<int>? onOpenTab;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -84,24 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
     await _load();
   }
 
-  Future<void> _confirmLogout() async {
-    final shouldLogout = await showConfirmDialog(
-      context,
-      title: "Log out?",
-      message: "You will need to sign in again to manage your business.",
-      confirmLabel: "Log out",
-      isDanger: true,
-    );
-    if (!shouldLogout || !mounted) return;
-    await OAuthService.instance.signOutProviders();
-    await widget.api.clearToken();
-    if (!mounted) return;
-    showSuccessToast(context, "Logged out");
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => LoginScreen(api: widget.api)),
-    );
-  }
-
   Future<void> _openSettings() async {
     await _openAndRefresh(BusinessSettingsScreen(api: widget.api));
   }
@@ -123,193 +108,21 @@ class _HomeScreenState extends State<HomeScreen> {
     final logoUrl = settings?.logoUrl;
     final businessName = settings?.businessName ?? Brand.name;
 
-    return Scaffold(
-      backgroundColor: AuthColors.frost,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Text(
-          "Dashboard",
-          style: GoogleFonts.fraunces(
-            fontWeight: FontWeight.w700,
-            color: AuthColors.blueberry,
-          ),
+    return AppPage(
+      title: "Home",
+      actions: [
+        IconButton(
+          tooltip: "Refresh",
+          onPressed: _loading ? null : _load,
+          icon: const Icon(Icons.refresh_rounded),
         ),
-        actions: [
-          IconButton(
-            tooltip: "Refresh",
-            onPressed: _loading ? null : _load,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-          IconButton(
-            tooltip: "Bluetooth printer",
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const PrinterSettingsScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.print_rounded),
-          ),
-        ],
-      ),
+      ],
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAndRefresh(SaleScreen(api: widget.api)),
         backgroundColor: AuthColors.primary,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add_shopping_cart_rounded),
         label: const Text("New sale"),
-      ),
-      drawer: Drawer(
-        backgroundColor: AuthColors.frost,
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF60A5FA), Color(0xFF2563EB)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundColor: Colors.white,
-                      backgroundImage: (logoUrl != null
-                              ? NetworkImage(logoUrl)
-                              : const AssetImage(Brand.logoAsset))
-                          as ImageProvider,
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      businessName,
-                      style: GoogleFonts.fraunces(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      settings?.ownerName ?? widget.user.name,
-                      style: const TextStyle(
-                        color: Color(0xFFE0F2FE),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      widget.user.email,
-                      style: const TextStyle(
-                        color: Color(0xFFBFDBFE),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.dashboard_outlined),
-                title: const Text("Dashboard"),
-                onTap: () => Navigator.pop(context),
-              ),
-              ListTile(
-                leading: const Icon(Icons.icecream_outlined),
-                title: const Text("Products"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openAndRefresh(ProductsScreen(api: widget.api));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.people_outline),
-                title: const Text("Customers"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openAndRefresh(CustomersScreen(api: widget.api));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.point_of_sale_outlined),
-                title: const Text("Sales"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openAndRefresh(SalesListScreen(api: widget.api));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.assignment_return_outlined),
-                title: const Text("Returns"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openAndRefresh(ReturnsScreen(api: widget.api));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.bar_chart_rounded),
-                title: const Text("Reports"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openAndRefresh(ReportsScreen(api: widget.api));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.storefront_outlined),
-                title: const Text("Business settings"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openSettings();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.print_rounded),
-                title: const Text("Bluetooth printer"),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openAndRefresh(const PrinterSettingsScreen());
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.receipt_long_outlined),
-                title: const Text("Bill preview"),
-                onTap: () async {
-                  Navigator.pop(context);
-                  try {
-                    final loaded =
-                        settings ?? await widget.api.fetchBusinessSettings();
-                    if (!context.mounted) return;
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => BillPreviewScreen(settings: loaded),
-                      ),
-                    );
-                  } catch (error) {
-                    if (!context.mounted) return;
-                    showErrorToast(
-                      context,
-                      error.toString().replaceFirst("Exception: ", ""),
-                    );
-                  }
-                },
-              ),
-              const Spacer(),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.logout, color: Color(0xFFB91C1C)),
-                title: const Text(
-                  "Log out",
-                  style: TextStyle(color: Color(0xFFB91C1C)),
-                ),
-                onTap: _confirmLogout,
-              ),
-            ],
-          ),
-        ),
       ),
       body: _loading && dash == null
           ? const Center(child: CircularProgressIndicator())
@@ -450,9 +263,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               _openAndRefresh(SaleScreen(api: widget.api)),
                         ),
                         _QuickChip(
+                          icon: Icons.receipt_long_outlined,
+                          label: "Sales",
+                          onTap: () => widget.onOpenTab?.call(1) ??
+                              _openAndRefresh(SalesListScreen(api: widget.api)),
+                        ),
+                        _QuickChip(
                           icon: Icons.icecream_outlined,
                           label: "Products",
-                          onTap: () =>
+                          onTap: () => widget.onOpenTab?.call(2) ??
                               _openAndRefresh(ProductsScreen(api: widget.api)),
                         ),
                         _QuickChip(

@@ -146,6 +146,7 @@ class _SaleDetailScreenState extends State<SaleDetailScreen> {
                           variantName: item.variantLabel,
                           quantity: item.quantity,
                           unitPrice: item.unitPrice,
+                          available: item.available,
                         ),
                       )
                       .toList(),
