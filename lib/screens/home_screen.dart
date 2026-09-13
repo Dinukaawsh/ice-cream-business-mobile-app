@@ -265,14 +265,26 @@ class _HomeScreenState extends State<HomeScreen> {
                         _QuickChip(
                           icon: Icons.receipt_long_outlined,
                           label: "Sales",
-                          onTap: () => widget.onOpenTab?.call(1) ??
-                              _openAndRefresh(SalesListScreen(api: widget.api)),
+                          onTap: () {
+                            final openTab = widget.onOpenTab;
+                            if (openTab != null) {
+                              openTab(1);
+                              return;
+                            }
+                            _openAndRefresh(SalesListScreen(api: widget.api));
+                          },
                         ),
                         _QuickChip(
                           icon: Icons.icecream_outlined,
                           label: "Products",
-                          onTap: () => widget.onOpenTab?.call(2) ??
-                              _openAndRefresh(ProductsScreen(api: widget.api)),
+                          onTap: () {
+                            final openTab = widget.onOpenTab;
+                            if (openTab != null) {
+                              openTab(2);
+                              return;
+                            }
+                            _openAndRefresh(ProductsScreen(api: widget.api));
+                          },
                         ),
                         _QuickChip(
                           icon: Icons.people_outline,
