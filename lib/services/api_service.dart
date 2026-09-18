@@ -409,6 +409,27 @@ class ApiService {
     }
   }
 
+  Future<String> recordCustomerPayment({
+    required int customerId,
+    required double amount,
+    String? notes,
+  }) async {
+    final response = await _client.post(
+      Uri.parse("$_baseUrl/api/customers/payments"),
+      headers: _headers(auth: true),
+      body: jsonEncode({
+        "customerId": customerId,
+        "amount": amount,
+        "notes": notes,
+      }),
+    );
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode != 200) {
+      throw Exception(data["error"] ?? "Could not record payment");
+    }
+    return data["message"] as String? ?? "Payment recorded";
+  }
+
   Future<List<SaleRecord>> fetchSales() async {
     final response = await _client.get(
       Uri.parse("$_baseUrl/api/sales"),
@@ -428,7 +449,7 @@ class ApiService {
         customerType: map["customerType"] as String?,
         saleDate: DateTime.parse(map["saleDate"] as String),
         totalAmount: (map["totalAmount"] as num?)?.toDouble() ?? 0,
-        previousBalance: 0,
+        previousBalance: (map["previousBalance"] as num?)?.toDouble() ?? 0,
         returnsCreditApplied:
             (map["returnsCreditApplied"] as num?)?.toDouble() ?? 0,
         paidAmount: (map["paidAmount"] as num?)?.toDouble() ?? 0,

@@ -127,6 +127,14 @@ class _SalesListScreenState extends State<SalesListScreen> {
                                         fontSize: 13,
                                       ),
                                     ),
+                                    if (sale.remainingAfter > 0) ...[
+                                      const SizedBox(height: 6),
+                                      AppStatusChip(
+                                        label:
+                                            "Still unpaid LKR ${sale.remainingAfter.toStringAsFixed(0)}",
+                                        tone: AppChipTone.warning,
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),

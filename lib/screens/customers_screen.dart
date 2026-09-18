@@ -126,6 +126,89 @@ class _CustomersScreenState extends State<CustomersScreen> {
     }
   }
 
+  Future<void> _recordPayment(CustomerItem customer) async {
+    if (customer.outstandingBalance <= 0) {
+      showErrorToast(context, "This customer has no unpaid amount");
+      return;
+    }
+    final amount = TextEditingController(
+      text: customer.outstandingBalance.toStringAsFixed(0),
+    );
+    final notes = TextEditingController();
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Record payback"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "${customer.name} unpaid: LKR ${customer.outstandingBalance.toStringAsFixed(0)}",
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: amount,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(labelText: "Amount paid"),
+              ),
+              TextField(
+                controller: notes,
+                decoration: const InputDecoration(
+                  labelText: "Note (optional)",
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Continue"),
+          ),
+        ],
+      ),
+    );
+    if (saved != true) return;
+    final value = double.tryParse(amount.text.trim()) ?? 0;
+    if (value <= 0) {
+      if (!mounted) return;
+      showErrorToast(context, "Enter a valid amount");
+      return;
+    }
+    if (!mounted) return;
+    final ok = await showConfirmDialog(
+      context,
+      title: "Record this payment?",
+      message:
+          "Take LKR ${value.toStringAsFixed(0)} from ${customer.name} against unpaid bills?",
+      confirmLabel: "Record payment",
+    );
+    if (!ok) return;
+    try {
+      final message = await widget.api.recordCustomerPayment(
+        customerId: customer.id,
+        amount: value,
+        notes: notes.text.trim().isEmpty ? null : notes.text.trim(),
+      );
+      if (!mounted) return;
+      showSuccessToast(context, message);
+      await _load();
+    } catch (error) {
+      if (!mounted) return;
+      showErrorToast(
+        context,
+        error.toString().replaceFirst("Exception: ", ""),
+      );
+    }
+  }
+
   Future<void> _delete(CustomerItem customer) async {
     final ok = await showConfirmDialog(
       context,
@@ -230,25 +313,36 @@ class _CustomersScreenState extends State<CustomersScreen> {
                                                     ? "Shop"
                                                     : "Person",
                                               ),
-                                              if (customer.type == "shop") ...[
-                                                AppStatusChip(
-                                                  label:
-                                                      "Due LKR ${customer.outstandingBalance.toStringAsFixed(0)}",
-                                                  tone: customer.outstandingBalance > 0
-                                                      ? AppChipTone.warning
-                                                      : AppChipTone.neutral,
-                                                ),
-                                                AppStatusChip(
-                                                  label:
-                                                      "Credit LKR ${customer.returnCredit.toStringAsFixed(0)}",
-                                                  tone: AppChipTone.success,
-                                                ),
+                                              if (customer.outstandingBalance > 0 ||
+                                                  customer.returnCredit > 0) ...[
+                                                if (customer.outstandingBalance > 0)
+                                                  AppStatusChip(
+                                                    label:
+                                                        "Due LKR ${customer.outstandingBalance.toStringAsFixed(0)}",
+                                                    tone: AppChipTone.warning,
+                                                  ),
+                                                if (customer.returnCredit > 0)
+                                                  AppStatusChip(
+                                                    label:
+                                                        "Credit LKR ${customer.returnCredit.toStringAsFixed(0)}",
+                                                    tone: AppChipTone.success,
+                                                  ),
                                               ],
                                             ],
                                           ),
                                         ],
                                       ),
                                     ),
+                                    if (customer.outstandingBalance > 0)
+                                      IconButton(
+                                        tooltip: "Record payback",
+                                        onPressed: () =>
+                                            _recordPayment(customer),
+                                        icon: const Icon(
+                                          Icons.payments_outlined,
+                                          color: Color(0xFF15803D),
+                                        ),
+                                      ),
                                     IconButton(
                                       onPressed: () => _delete(customer),
                                       icon: const Icon(

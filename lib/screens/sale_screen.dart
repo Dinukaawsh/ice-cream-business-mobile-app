@@ -1,3 +1,5 @@
+import "dart:math" as math;
+
 import "package:flutter/material.dart";
 import "package:google_fonts/google_fonts.dart";
 
@@ -7,6 +9,7 @@ import "../services/api_service.dart";
 import "../widgets/app_chrome.dart";
 import "../widgets/app_toast.dart";
 import "../widgets/auth_ui.dart";
+import "../widgets/confirm_dialog.dart";
 import "sale_detail_screen.dart";
 
 class _CartLine {
@@ -49,6 +52,9 @@ class _SaleScreenState extends State<SaleScreen> {
   @override
   void initState() {
     super.initState();
+    _paid.addListener(() {
+      if (mounted) setState(() {});
+    });
     _boot();
   }
 
@@ -88,6 +94,24 @@ class _SaleScreenState extends State<SaleScreen> {
 
   double get _subtotal =>
       _cart.fold(0, (sum, line) => sum + line.lineTotal);
+
+  double get _pastDue =>
+      _mode == "customer" ? (_customer?.outstandingBalance ?? 0) : 0;
+
+  double get _credit =>
+      _mode == "customer" ? (_customer?.returnCredit ?? 0) : 0;
+
+  double get _creditApplied {
+    if (_mode != "customer" || !_applyCredit) return 0;
+    return math.min(_credit, _pastDue + _subtotal);
+  }
+
+  double get _paidNow => double.tryParse(_paid.text.trim()) ?? 0;
+
+  double get _remainingAfter => math.max(
+        0,
+        _pastDue + _subtotal - _creditApplied - _paidNow,
+      );
 
   Future<void> _addItem() async {
     if (_products.isEmpty) {
@@ -246,10 +270,43 @@ class _SaleScreenState extends State<SaleScreen> {
     }
   }
 
+  Future<void> _recordPayback() async {
+    final customer = _customer;
+    if (customer == null || _pastDue <= 0) return;
+    final amount = _paidNow > 0 ? math.min(_paidNow, _pastDue) : _pastDue;
+    final ok = await showConfirmDialog(
+      context,
+      title: "Record payback?",
+      message:
+          "Collect LKR ${amount.toStringAsFixed(0)} from ${customer.name} against unpaid bills? This is not a new sale.",
+      confirmLabel: "Record payment",
+    );
+    if (!ok) return;
+    setState(() => _saving = true);
+    try {
+      final message = await widget.api.recordCustomerPayment(
+        customerId: customer.id,
+        amount: amount,
+        notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
+      );
+      if (!mounted) return;
+      showSuccessToast(context, message);
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      showErrorToast(
+        context,
+        error.toString().replaceFirst("Exception: ", ""),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final credit = _customer?.returnCredit ?? 0;
-    final due = _customer?.outstandingBalance ?? 0;
+    final credit = _credit;
+    final due = _pastDue;
 
     return AppPage(
       title: "New sale",
@@ -284,7 +341,9 @@ class _SaleScreenState extends State<SaleScreen> {
                           (item) => DropdownMenuItem(
                             value: item,
                             child: Text(
-                              "${item.name} (${item.type})",
+                              item.outstandingBalance > 0
+                                  ? "${item.name} · due LKR ${item.outstandingBalance.toStringAsFixed(0)}"
+                                  : "${item.name} (${item.type})",
                             ),
                           ),
                         )
@@ -300,14 +359,52 @@ class _SaleScreenState extends State<SaleScreen> {
                     ),
                   ),
                   if (_customer != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      "Due LKR ${due.toStringAsFixed(0)} · Return credit LKR ${credit.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                        color: AuthColors.muted,
-                        fontSize: 12,
+                    const SizedBox(height: 10),
+                    if (due > 0)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: const Color(0xFFFCD34D)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Unpaid from past bills",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFB45309),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "LKR ${due.toStringAsFixed(0)} will be added to this bill. Collect it in Paid now, or record a payback without selling anything.",
+                              style: const TextStyle(
+                                color: Color(0xFF92400E),
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      const Text(
+                        "No unpaid amount from past bills.",
+                        style: TextStyle(color: AuthColors.muted, fontSize: 13),
                       ),
-                    ),
+                    if (credit > 0) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        "Return credit LKR ${credit.toStringAsFixed(0)}",
+                        style: const TextStyle(
+                          color: AuthColors.muted,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                     if (_customer!.type == "shop")
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
@@ -397,13 +494,25 @@ class _SaleScreenState extends State<SaleScreen> {
                     );
                   }),
                 AppSurfaceCard(
-                  child: Text(
-                    "Subtotal  LKR ${_subtotal.toStringAsFixed(0)}",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      color: AuthColors.ink,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (due > 0)
+                        _BillRow("Past unpaid", "LKR ${due.toStringAsFixed(0)}"),
+                      _BillRow("Today's items", "LKR ${_subtotal.toStringAsFixed(0)}"),
+                      if (_creditApplied > 0)
+                        _BillRow(
+                          "Return credit",
+                          "- LKR ${_creditApplied.toStringAsFixed(0)}",
+                        ),
+                      _BillRow("Paid now", "LKR ${_paidNow.toStringAsFixed(0)}"),
+                      const Divider(height: 18),
+                      _BillRow(
+                        "Still unpaid after this bill",
+                        "LKR ${_remainingAfter.toStringAsFixed(0)}",
+                        bold: true,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -423,6 +532,16 @@ class _SaleScreenState extends State<SaleScreen> {
                   prefixIcon: Icons.notes_outlined,
                 ),
                 const SizedBox(height: 20),
+                if (due > 0 && _cart.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: OutlinedButton(
+                      onPressed: _saving ? null : _recordPayback,
+                      child: Text(
+                        "Record payback (no sale) · LKR ${(_paidNow > 0 ? math.min(_paidNow, due) : due).toStringAsFixed(0)}",
+                      ),
+                    ),
+                  ),
                 AuthPrimaryButton(
                   label: "Complete sale",
                   loading: _saving,
@@ -430,6 +549,41 @@ class _SaleScreenState extends State<SaleScreen> {
                 ),
               ],
             ),
+    );
+  }
+}
+
+class _BillRow extends StatelessWidget {
+  const _BillRow(this.label, this.value, {this.bold = false});
+
+  final String label;
+  final String value;
+  final bool bold;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: bold ? AuthColors.ink : AuthColors.muted,
+                fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+              color: bold ? const Color(0xFFB45309) : AuthColors.ink,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
